@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import *
 from random import shuffle
 
 
+#
 # ---------------------------
 #Clase Question 
 # ---------------------------
@@ -18,6 +19,14 @@ class Question():
         self.wrong1 = wrong1
         self.wrong2 = wrong2
         self.wrong3 = wrong3
+
+#---------------------------
+#Lista de preguntas 
+# ---------------------------
+question_list = []
+question_list.append(Question('El idioma nacional de Brasil','Portugués','Peruano','Brasileiro','Londinense'))
+question_list.append(Question('¿Cuanto es 7 x 8?','56','66','53','53'))
+question_list.append(Question('Capital de México','CDMX','Chihuahua','Guadalajara','Tlaxcala'))
 
 # ---------------------------
 # Inicialización de la app
@@ -166,22 +175,20 @@ def Show_Question():
     AnsGroupBox.hide()
     btn_OK.setText('Responder')
     RadioGroup.setExclusive(False)
-    rbtn_1.setChecked(False)
-    rbtn_2.setChecked(False)
-    rbtn_3.setChecked(False)
-    rbtn_4.setChecked(False)
+    for rb in answers:
+        rb.setChecked(False) #sustituye rbtn_1.setChecked(False)
     RadioGroup.setExclusive(True)
 
 answers=[rbtn_1,rbtn_2,rbtn_3,rbtn_4]
 
-def ask(question,right_answer,wrong1,wrong2,wrong3):
+def ask(q : Question):
     shuffle(answers)
-    answers[0].setText(right_answer)
-    answers[1].setText(wrong1)
-    answers[2].setText(wrong2)
-    answers[3].setText(wrong3)
-    lb_Question.setText(question)
-    Lb_Correct.setText(right_answer)
+    answers[0].setText(q.right_answer)
+    answers[1].setText(q.wrong1)
+    answers[2].setText(q.wrong2)
+    answers[3].setText(q.wrong3)
+    lb_Question.setText(q.question)
+    Lb_Correct.setText(q.right_answer)
     Show_Question()
 
 #Mostrar el resultado
@@ -197,17 +204,31 @@ def Check_Answer():
         if answers[1].isChecked() or answers[2].isChecked() or answers[3].isChecked():
             Show_Correct('¡Incorrecto!')
 
+#Realiza la siguiente pregunta en la lista
+def next_question():
+    #Variable global  
+    window.cur_question = window.cur_question +1 #Pasa a la siguiente pregunta
+    if window.cur_question >= len(question_list):
+        window.cur_question = 0 #Si la pregunta ha terminado vuelve a comenzar
+    q = question_list[window.cur_question] #toma una pregunta
+    ask(q) #Pregunta 
 
+def Click_OK():
+    #determinar sis e hace otra pregunta o se comprueba la respuesta
+    if btn_OK.text() == 'Responder':
+        Check_Answer()
+    else:
+        next_question()
+
+window.cur_question = -1
 # ---------------------------
 # Mostrar ventana
 # ---------------------------
 
 window.setLayout(VLine_Principal)
 
-ask('El idioma nacional de Brasil','Portugués','Peruano','Brasileiro','Londinense')
-btn_OK.clicked.connect(Check_Answer)
+btn_OK.clicked.connect(Click_OK)
 window.show()
 
 # Ejecutar aplicación
 app.exec()
-
