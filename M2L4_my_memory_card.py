@@ -9,6 +9,17 @@ from random import shuffle
 
 
 # ---------------------------
+#Clase Question 
+# ---------------------------
+class Question():
+    def __init__(self,question,right_answer,wrong1,wrong2,wrong3):
+        self.question = question
+        self.right_answer = right_answer
+        self.wrong1 = wrong1
+        self.wrong2 = wrong2
+        self.wrong3 = wrong3
+
+# ---------------------------
 # Inicialización de la app
 # ---------------------------
 app = QApplication([])
@@ -139,9 +150,52 @@ VLine_Ans.addWidget(
 
 AnsGroupBox.setLayout(VLine_Ans)
 
-# (Actualmente no se muestra)
-# HLine_Respuesta.addWidget(AnsGroupBox)
+
+HLine_Respuesta.addWidget(AnsGroupBox)
 # RadioGroupBox.hide()
+
+# Mostrar panel de respuesta
+def Show_Result():
+    RadioGroupBox.hide()
+    AnsGroupBox.show()
+    btn_OK.setText('Siguiente pregunta')
+
+#Mostrar panel de preguntas
+def Show_Question():
+    RadioGroupBox.show()
+    AnsGroupBox.hide()
+    btn_OK.setText('Responder')
+    RadioGroup.setExclusive(False)
+    rbtn_1.setChecked(False)
+    rbtn_2.setChecked(False)
+    rbtn_3.setChecked(False)
+    rbtn_4.setChecked(False)
+    RadioGroup.setExclusive(True)
+
+answers=[rbtn_1,rbtn_2,rbtn_3,rbtn_4]
+
+def ask(question,right_answer,wrong1,wrong2,wrong3):
+    shuffle(answers)
+    answers[0].setText(right_answer)
+    answers[1].setText(wrong1)
+    answers[2].setText(wrong2)
+    answers[3].setText(wrong3)
+    lb_Question.setText(question)
+    Lb_Correct.setText(right_answer)
+    Show_Question()
+
+#Mostrar el resultado
+def Show_Correct(res):
+    lb_Result.setText(res)
+    Show_Result()
+
+#Revisar si se seleccionó la respuesta correcta
+def Check_Answer():
+    if answers[0].isChecked():
+        Show_Correct('¡Correcto!')
+    else:
+        if answers[1].isChecked() or answers[2].isChecked() or answers[3].isChecked():
+            Show_Correct('¡Incorrecto!')
 
 
 # ---------------------------
@@ -149,7 +203,11 @@ AnsGroupBox.setLayout(VLine_Ans)
 # ---------------------------
 
 window.setLayout(VLine_Principal)
+
+ask('El idioma nacional de Brasil','Portugués','Peruano','Brasileiro','Londinense')
+btn_OK.clicked.connect(Check_Answer)
 window.show()
 
 # Ejecutar aplicación
 app.exec()
+
