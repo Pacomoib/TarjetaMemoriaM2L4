@@ -1,0 +1,226 @@
+# Importa constantes básicas (alineaciones, etc.)
+from PyQt5.QtCore import Qt
+
+# Importa widgets de PyQt5 (evita import * para mantener el namespace limpio)
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QHBoxLayout, QVBoxLayout, QGroupBox,
+    QButtonGroup, QRadioButton, QPushButton, QLabel
+)
+
+# Importa shuffle para mezclar el orden de respuestas
+from random import shuffle
+
+
+# ---------------------------
+# Clase Question (modelo de datos)
+# ---------------------------
+class Question:
+    def __init__(self, question, right_answer, wrong1, wrong2, wrong3):
+        self.question = question
+        self.right_answer = right_answer
+        self.wrong1 = wrong1
+        self.wrong2 = wrong2
+        self.wrong3 = wrong3
+
+
+# ---------------------------
+# Lista de preguntas
+# ---------------------------
+question_list = []
+question_list.append(Question('El idioma nacional de Brasil', 'Portugués', 'Peruano', 'Brasileiro', 'Londinense'))
+
+# Corrijo el error de contenido: había dos "53"
+question_list.append(Question('¿Cuánto es 7 x 8?', '56', '66', '53', '54'))
+
+question_list.append(Question('Capital de México', 'CDMX', 'Chihuahua', 'Guadalajara', 'Tlaxcala'))
+
+
+# ---------------------------
+# Inicialización de la app
+# ---------------------------
+app = QApplication([])
+
+# Ventana principal
+window = QWidget()
+window.setWindowTitle('Tarjeta de Memoria')
+
+
+# ---------------------------
+# Widgets principales
+# ---------------------------
+btn_OK = QPushButton('Responder')               # Botón para enviar respuesta / siguiente
+lb_Question = QLabel('Aquí va la pregunta')     # Etiqueta con la pregunta (se cargará desde el banco)
+
+
+# ---------------------------
+# Grupo de opciones (respuestas)
+# ---------------------------
+RadioGroupBox = QGroupBox('Opciones de respuesta')
+
+rbtn_1 = QRadioButton('Opción 1')
+rbtn_2 = QRadioButton('Opción 2')
+rbtn_3 = QRadioButton('Opción 3')
+rbtn_4 = QRadioButton('Opción 4')
+
+# Lista para poder iterar fácilmente sobre los radio buttons
+answers = [rbtn_1, rbtn_2, rbtn_3, rbtn_4]
+
+# Agrupa los radio buttons para que solo uno pueda seleccionarse
+RadioGroup = QButtonGroup()
+for rb in answers:
+    RadioGroup.addButton(rb)
+
+
+# ---------------------------
+# Layout interno de respuestas (2 columnas)
+# ---------------------------
+VLine_1 = QVBoxLayout()
+VLine_2 = QVBoxLayout()
+HLine = QHBoxLayout()
+
+VLine_1.addWidget(rbtn_1)
+VLine_1.addWidget(rbtn_2)
+VLine_2.addWidget(rbtn_3)
+VLine_2.addWidget(rbtn_4)
+
+HLine.addLayout(VLine_1)
+HLine.addLayout(VLine_2)
+
+RadioGroupBox.setLayout(HLine)
+
+
+# ---------------------------
+# Panel de resultados
+# ---------------------------
+AnsGroupBox = QGroupBox('Resultados')
+lb_Result = QLabel('')     # Mensaje: correcto/incorrecto/selecciona una opción
+lb_Correct = QLabel('')    # Muestra la respuesta correcta
+
+VLine_Ans = QVBoxLayout()
+VLine_Ans.addWidget(lb_Result, alignment=(Qt.AlignHCenter | Qt.AlignVCenter))
+VLine_Ans.addWidget(lb_Correct, alignment=Qt.AlignHCenter, stretch=2)
+AnsGroupBox.setLayout(VLine_Ans)
+
+
+# ---------------------------
+# Layouts principales
+# ---------------------------
+HLine_Pregunta = QHBoxLayout()
+HLine_Respuesta = QHBoxLayout()
+HLine_Boton = QHBoxLayout()
+
+VLine_Principal = QVBoxLayout()
+
+HLine_Pregunta.addWidget(lb_Question, alignment=(Qt.AlignHCenter | Qt.AlignVCenter))
+
+# Nota: aquí metemos ambos grupos, pero mostraremos uno u otro
+HLine_Respuesta.addWidget(RadioGroupBox)
+HLine_Respuesta.addWidget(AnsGroupBox)
+
+HLine_Boton.addStretch(1)
+HLine_Boton.addWidget(btn_OK, stretch=2)
+HLine_Boton.addStretch(1)
+
+VLine_Principal.addLayout(HLine_Pregunta, stretch=2)
+VLine_Principal.addLayout(HLine_Respuesta, stretch=8)
+VLine_Principal.addLayout(HLine_Boton, stretch=1)
+
+
+# ---------------------------
+# Funciones de UI
+# ---------------------------
+def show_result():
+    """Muestra el panel de resultados y oculta el de opciones."""
+    RadioGroupBox.hide()
+    AnsGroupBox.show()
+    btn_OK.setText('Siguiente pregunta')
+
+
+def show_question():
+    """Muestra el panel de opciones y oculta el de resultados, además reinicia selección."""
+    RadioGroupBox.show()
+    AnsGroupBox.hide()
+    btn_OK.setText('Responder')
+
+    # Para desmarcar radio buttons correctamente en Qt:
+    # - desactivamos exclusividad
+    # - desmarcamos todos
+    # - reactivamos exclusividad
+    RadioGroup.setExclusive(False)
+    for rb in answers:
+        rb.setChecked(False)
+    RadioGroup.setExclusive(True)
+
+
+def ask(q: Question):
+    """
+    Carga una pregunta en la UI:
+    - Mezcla el orden de los radio buttons en la lista 'answers'
+    - Pone la respuesta correcta en answers[0]
+    - Actualiza textos y muestra el panel de pregunta
+    """
+    shuffle(answers)
+
+    answers[0].setText(q.right_answer)
+    answers[1].setText(q.wrong1)
+    answers[2].setText(q.wrong2)
+    answers[3].setText(q.wrong3)
+
+    lb_Question.setText(q.question)
+    lb_Correct.setText(f"Respuesta correcta: {q.right_answer}")
+
+    show_question()
+
+
+def show_correct(res_text: str):
+    """Actualiza el texto de resultado y muestra el panel de resultados."""
+    lb_Result.setText(res_text)
+    show_result()
+
+
+def check_answer():
+    """
+    Revisa la selección del usuario.
+    Regla del juego:
+    - answers[0] SIEMPRE contiene la respuesta correcta (porque así lo definimos en ask()).
+    """
+    if answers[0].isChecked():
+        show_correct('¡Correcto!')
+    elif any(rb.isChecked() for rb in answers[1:]):
+        show_correct('¡Incorrecto!')
+    else:
+        # Caso faltante en tu versión: el usuario no seleccionó nada
+        show_correct('Selecciona una opción antes de responder.')
+
+
+def next_question():
+    """Avanza a la siguiente pregunta del banco y la carga."""
+    window.cur_question += 1
+    if window.cur_question >= len(question_list):
+        window.cur_question = 0
+
+    q = question_list[window.cur_question]
+    ask(q)
+
+
+def click_ok():
+    """Si estamos respondiendo, evaluamos. Si estamos en resultados, avanzamos."""
+    if btn_OK.text() == 'Responder':
+        check_answer()
+    else:
+        next_question()
+
+
+# ---------------------------
+# Estado inicial + mostrar ventana
+# ---------------------------
+window.cur_question = -1
+
+window.setLayout(VLine_Principal)
+
+# IMPORTANTE: ocultar el panel de resultados al inicio
+AnsGroupBox.hide()
+
+btn_OK.clicked.connect(click_ok)
+
+# IMPORTANTE: ca
